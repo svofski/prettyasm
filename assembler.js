@@ -512,46 +512,43 @@ Assembler.prototype.splitParts = function(s)
 // fake preprocessor for TASM compatibility
 Assembler.prototype.preprocess = function(parts, equ) {
     const mnemonic = parts[0];
-    if (mnemonic === "#define") {
-        if (parts.length > 1) {
-            var sym = parts[1].trim();
-            var expr = "";
-            if (parts.length > 2) {
-                var expr = parts.slice(2).join(' ');
-                equ[sym] = parts.slice(2);
+    if (this.ifdef.reduce(function(x,y) {return x && y})) {
+        if (mnemonic === "#define") {
+            if (parts.length > 1) {
+                var sym = parts[1].trim();
+                var expr = "";
+                if (parts.length > 2) {
+                    var expr = parts.slice(2).join(' ');
+                    equ[sym] = parts.slice(2);
+                }
+                this.defines[sym] = expr;
             }
-            this.defines[sym] = expr;
         }
-        //text = ";;; " + text;
-    }
-    else if (mnemonic === "#undef") {
-        if (parts.length > 1) {
-            var sym = parts[1].trim();
-            delete this.defines[sym];
+        else if (mnemonic === "#undef") {
+            if (parts.length > 1) {
+                var sym = parts[1].trim();
+                delete this.defines[sym];
+            }
         }
-        //text = ";;; " + text;
     }
-    else if (mnemonic === "#ifdef") {
+
+    if (mnemonic === "#ifdef") {
         if (parts.length > 1) {
             var sym = parts[1].trim();
             this.ifdef.push(this.defines[sym] !== undefined);
         }
-        //text = ";;; " + text;
     }
     else if (mnemonic === "#ifndef") {
         if (parts.length > 1) {
             var sym = parts[1].trim();
             this.ifdef.push(this.defines[sym] === undefined);
         }
-        //text = ";;; " + text;
     }
     else if (mnemonic === "#endif") {
         this.ifdef.pop();
-        //text = ";;; " + text;
     }
     else if (mnemonic === "#else") {
         this.ifdef.push(!this.ifdef.pop());
-        //text = ";;; " + text;
     }
 };
 
@@ -582,7 +579,8 @@ Assembler.prototype.parseInstruction = function(parts, addr, linenumber) {
         this.preprocess(parts, defequ);
 
         // skip #ifndef scopes
-        if (!this.ifdef.slice(-1)[0]) {
+        if (!this.ifdef.reduce(function(x,y) {return x && y}))
+        {
             return 0;
         }
 
