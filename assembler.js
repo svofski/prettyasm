@@ -59,6 +59,7 @@
 //importScripts('tape.js');
 
 var Util = require('./util').Util;
+var TapeFormat = require('./tape');
 
 function Assembler() {
     this.debug = false;
@@ -778,7 +779,7 @@ Assembler.prototype.parseInstruction = function(parts, addr, linenumber) {
         if (mnemonic == ".tape") {
             if (parts[1] !== undefined && parts[1].trim().length > 0) {
                 this.tapeFormat = parts[1];
-                var test = new TapeFormat(this.tapeFormat);
+                var test = TapeFormat.TapeFormat(this.tapeFormat)
                 if (test.format) {
                     result = -100000;
                     break;
